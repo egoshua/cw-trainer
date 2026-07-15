@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Learn and practice Morse code (CW) — Koch method, Farnsworth timing, instant character recognition drills, copy and send practice. Free, runs entirely in your browser.">
+<title>CW Trainer — Learn &amp; Practice Morse Code</title>
+<style>
+  :root{
+    --bg:#141619; --panel:#1d2127; --panel2:#232830; --line:#2e343d;
+    --amber:#ffb454; --amber-dim:#8a6a33; --amber-glow:rgba(255,180,84,.14);
+    --ink:#e7e2d6; --muted:#8b909b; --ok:#8fce8f; --bad:#e5684f;
+    --mono:"Cascadia Mono",Consolas,"SF Mono",Menlo,monospace;
+    --sans:"Segoe UI",system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);min-height:100vh}
+  button{font-family:inherit;cursor:pointer}
+  input,select{font-family:inherit}
+
+  header{display:flex;flex-wrap:wrap;gap:14px;align-items:center;
+    padding:14px 18px;border-bottom:1px solid var(--line);background:var(--panel)}
+  .brand{display:flex;align-items:baseline;gap:10px;margin-right:auto}
+  .brand h1{font:600 17px var(--sans);letter-spacing:.06em}
+  .brand .sub{font:11px var(--mono);color:var(--muted);letter-spacing:.14em;text-transform:uppercase}
+  .knob{display:flex;flex-direction:column;gap:3px;min-width:118px}
+  .knob label{font:10px var(--mono);letter-spacing:.14em;color:var(--muted);text-transform:uppercase}
+  .knob .row{display:flex;align-items:center;gap:8px}
+  .knob input[type=range]{flex:1;accent-color:var(--amber);min-width:70px}
+  .knob .val{font:600 14px var(--mono);color:var(--amber);min-width:44px;text-align:right}
+  .lamp{width:12px;height:12px;border-radius:50%;background:#3a2f1c;border:1px solid #574523;
+    box-shadow:inset 0 0 3px #000;transition:background .05s}
+  .lamp.on{background:var(--amber);box-shadow:0 0 10px var(--amber),0 0 22px var(--amber-glow)}
+  .lampwrap{display:flex;flex-direction:column;align-items:center;gap:4px}
+  .lampwrap span{font:10px var(--mono);color:var(--muted);letter-spacing:.14em}
+  .acctWidget{display:flex;align-items:center;gap:8px;margin-left:6px}
+  .acctWidget .who{display:flex;align-items:center;gap:8px;font:12px var(--mono);color:var(--muted)}
+  .acctWidget .who b{color:var(--amber);font-weight:600}
+  .acctWidget .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 6px var(--ok)}
+  .acctWidget .mini{font:12px var(--sans);color:var(--muted);text-decoration:underline;background:none;border:none;padding:0}
+  .acctWidget .mini:hover{color:var(--ink)}
+
+  nav{display:flex;gap:2px;padding:0 12px;background:var(--panel);border-bottom:1px solid var(--line);
+    overflow-x:auto;scrollbar-width:none}
+  nav::-webkit-scrollbar{display:none}
+  nav button{background:none;border:none;color:var(--muted);padding:11px 14px;white-space:nowrap;
+    font:600 13px var(--sans);letter-spacing:.04em;border-bottom:2px solid transparent}
+  nav button.active{color:var(--amber);border-bottom-color:var(--amber)}
+  nav button:hover{color:var(--ink)}
+  main{max-width:1000px;margin:0 auto;padding:22px 18px 60px}
+  .tab{display:none}
+  .tab.active{display:block}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+  .card h2{font:600 13px var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+  .grid{display:grid;gap:14px}
+  @media(min-width:720px){.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}}
+  .btn{background:var(--panel2);border:1px solid var(--line);color:var(--ink);
+    padding:9px 16px;border-radius:8px;font-size:14px}
+  .btn:hover{border-color:var(--amber-dim)}
+  .btn.primary{background:var(--amber);color:#1a1408;border-color:var(--amber);font-weight:600}
+  .btn.primary:hover{filter:brightness(1.08)}
+  .btn:disabled{opacity:.4;cursor:default}
+  .field{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+  .field label{font:11px var(--mono);letter-spacing:.1em;color:var(--muted);text-transform:uppercase}
+  .field select,.field input[type=text],.field input[type=password],.field input[type=number]{
+    background:var(--bg);border:1px solid var(--line);color:var(--ink);
+    padding:8px 10px;border-radius:7px;font-size:14px}
+  .field input[type=range]{accent-color:var(--amber)}
+
+  .lcd{background:#100d06;border:1px solid #3d3015;border-radius:8px;
+    padding:14px;font-family:var(--mono);color:var(--amber);
+    box-shadow:inset 0 0 24px rgba(0,0,0,.7), inset 0 0 60px var(--amber-glow);
+    min-height:64px;position:relative;overflow:hidden}
+  .lcd::after{content:"";position:absolute;inset:0;pointer-events:none;
+    background:repeating-linear-gradient(0deg,transparent 0 2px,rgba(0,0,0,.12) 2px 3px)}
+  .lcd .big{font-size:26px;letter-spacing:.12em;word-break:break-all;min-height:34px;text-shadow:0 0 8px var(--amber-glow)}
+  .lcd .dim{color:var(--amber-dim);font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:6px}
+  .lcd .mark{color:#5c4720}
+
+  textarea.answer,input.answer{width:100%;background:var(--bg);border:1px solid var(--line);color:var(--ink);
+    font:18px var(--mono);letter-spacing:.14em;padding:10px;border-radius:8px;
+    text-transform:uppercase;resize:vertical;min-height:52px}
+  input.answer{min-height:0}
+  textarea.answer:focus,input.answer:focus{outline:none;border-color:var(--amber-dim)}
+  .grade{font:16px var(--mono);letter-spacing:.16em;margin-top:10px;word-break:break-all;line-height:1.9}
+  .grade .hit{color:var(--ok)}
+  .grade .miss{color:var(--bad);text-decoration:underline}
+  .statline{font:12px var(--mono);color:var(--muted);margin-top:8px}
+  .statline b{color:var(--amber)}
+
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{font:600 13px var(--mono);padding:5px 0;width:34px;text-align:center;border-radius:6px;
+    border:1px solid var(--line);background:var(--panel2);color:var(--muted)}
+  .chip.learned{color:var(--amber);border-color:var(--amber-dim)}
+  .chip.current{color:#1a1408;background:var(--amber);border-color:var(--amber)}
+  .chip .pct{display:block;font:9px var(--mono);letter-spacing:0}
+
+  .pads{display:flex;gap:12px;margin-top:12px}
+  .pad{flex:1;user-select:none;-webkit-user-select:none;touch-action:none;
+    background:var(--panel2);border:1px solid var(--line);border-radius:12px;
+    padding:26px 0;text-align:center;font:600 15px var(--sans);letter-spacing:.1em;color:var(--muted)}
+  .pad:active,.pad.down{background:var(--amber);color:#1a1408;border-color:var(--amber)}
+  .kbdhint{font:12px var(--mono);color:var(--muted);margin-top:8px;line-height:1.7}
+  kbd{background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:1px 6px;font:11px var(--mono)}
+  .elm{display:inline-block;height:12px;background:var(--amber);border-radius:2px;
+    margin:0 2px;vertical-align:middle;box-shadow:0 0 6px var(--amber-glow)}
+  .elm.dit{width:12px}.elm.dah{width:34px}
+  .elm.gap{width:10px;background:none;box-shadow:none}
+
+  .charttbl{display:grid;grid-template-columns:repeat(auto-fill,minmax(122px,1fr));gap:8px}
+  .cw-cell{display:flex;align-items:center;gap:10px;background:var(--panel2);
+    border:1px solid var(--line);border-radius:8px;padding:8px 10px;cursor:pointer;position:relative}
+  .cw-cell:hover{border-color:var(--amber-dim)}
+  .cw-cell .ch{font:600 16px var(--mono);color:var(--muted);min-width:24px}
+  .cw-cell .code{font:14px var(--mono);color:var(--muted);letter-spacing:2px}
+  .cw-cell .cellpct{position:absolute;top:3px;right:6px;font:9px var(--mono);color:var(--muted)}
+  .cw-cell.seen .ch{color:var(--ink)}
+  .cw-cell.seen .cellpct{color:var(--ink)}
+  .cw-cell.learned{border-color:var(--amber-dim);background:rgba(255,180,84,.06)}
+  .cw-cell.learned .ch{color:var(--amber)}
+  .cw-cell.learned .cellpct{color:var(--amber)}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font:12px var(--mono);color:var(--muted);margin:0 0 14px}
+  .legend .sw{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px;
+    background:var(--panel2);border:1px solid var(--line)}
+  .legend .sw.s2{border-color:var(--ink)}
+  .legend .sw.s3{border-color:var(--amber-dim);background:rgba(255,180,84,.25)}
+  .grouphead{display:flex;align-items:center;justify-content:space-between;margin:4px 0 10px}
+  .grouphead h3{font:600 14px var(--sans);letter-spacing:.06em}
+  .grouphead .n{font:11px var(--mono);color:var(--muted);margin-left:8px}
+
+  .bindbtn{min-width:120px}
+  .pill{display:inline-block;font:11px var(--mono);border:1px solid var(--line);
+    border-radius:20px;padding:3px 10px;color:var(--muted);margin-left:8px}
+  .pill.ok{color:var(--ok);border-color:var(--ok)}
+  .note{font:12px var(--sans);color:var(--muted);line-height:1.6;margin-top:8px}
+  .row-inline{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+  /* learn guide */
+  .guide p{line-height:1.75;margin-bottom:12px;font-size:15px}
+  .guide .rule{display:flex;gap:12px;margin-bottom:12px;align-items:flex-start}
+  .guide .rule .tag{flex:0 0 52px;text-align:center;font:700 11px var(--mono);letter-spacing:.08em;
+    padding:4px 0;border-radius:5px;margin-top:2px}
+  .tag.do{background:rgba(143,206,143,.12);color:var(--ok);border:1px solid rgba(143,206,143,.4)}
+  .tag.dont{background:rgba(229,104,79,.1);color:var(--bad);border:1px solid rgba(229,104,79,.4)}
+  .guide .rule div{line-height:1.65;font-size:14.5px}
+  .path{display:grid;gap:10px}
+  @media(min-width:760px){.path{grid-template-columns:repeat(4,1fr)}}
+  .stage{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:14px}
+  .stage .no{font:700 12px var(--mono);color:var(--amber);letter-spacing:.14em;margin-bottom:6px}
+  .stage h4{font:600 14px var(--sans);margin-bottom:6px}
+  .stage p{font-size:13px;color:var(--muted);line-height:1.55;margin-bottom:10px}
+  .stage .btn{width:100%;font-size:13px;padding:7px 0}
+  .drillbar{display:flex;gap:14px;flex-wrap:wrap;font:13px var(--mono);color:var(--muted);margin-top:10px}
+  .drillbar b{color:var(--amber)}
+  @media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>CW TRAINER</h1><span class="sub">Learn &amp; practice Morse code</span>
+  </div>
+  <div class="knob">
+    <label>Char speed</label>
+    <div class="row"><input type="range" id="charWpm" min="10" max="45" value="20">
+    <span class="val" id="charWpmV">20 wpm</span></div>
+  </div>
+  <div class="knob">
+    <label>Effective (Farnsworth)</label>
+    <div class="row"><input type="range" id="effWpm" min="4" max="45" value="10">
+    <span class="val" id="effWpmV">10 wpm</span></div>
+  </div>
+  <div class="knob">
+    <label>Tone</label>
+    <div class="row"><input type="range" id="tone" min="400" max="1000" step="10" value="600">
+    <span class="val" id="toneV">600 Hz</span></div>
+  </div>
+  <div class="knob" style="min-width:90px">
+    <label>Volume</label>
+    <div class="row"><input type="range" id="vol" min="0" max="100" value="60">
+    <span class="val" id="volV">60%</span></div>
+  </div>
+  <div class="lampwrap"><div class="lamp" id="lamp"></div><span>KEY</span></div>
+  <div class="acctWidget" id="acctWidget">
+    <button class="btn" id="headerAcctBtn">Sign in</button>
+  </div>
+</header>
+
+<nav>
+  <button data-tab="guide" class="active">How to learn</button>
+  <button data-tab="chars">Characters</button>
+  <button data-tab="learn">Koch course</button>
+  <button data-tab="copy">Copy practice</button>
+  <button data-tab="send">Send practice</button>
+  <button data-tab="setup">Setup</button>
+</nav>
+
+<main>
+
+<!-- ================= GUIDE ================= -->
+<section class="tab active" id="tab-guide">
+  <div class="card guide">
+    <h2>The method that actually works</h2>
+    <p>Ask a hundred CW operators how they got fluent and you'll hear the same story: Morse code is a
+    <b>listening skill, not a memorization exercise</b>. Fluent operators don't decode dits and dahs —
+    they hear <span style="color:var(--amber);font-family:var(--mono)">di-dah-di-dit</span> and the letter
+    L simply appears in their head, the way you hear a spoken word without spelling it. Everything on this
+    site is built around getting you to that reflex, called <b>Instant Character Recognition (ICR)</b>.</p>
+    <div class="rule"><span class="tag do">DO</span><div><b>Learn characters at 20&nbsp;wpm or faster.</b>
+      At that speed you physically can't count elements — each character becomes one sound pattern.
+      If you can still count at 20, go faster. Use the Farnsworth knob to slow the <i>spacing</i>
+      (10&nbsp;wpm effective is the classic starting point) so you get thinking time without ever hearing slow, stretched characters.</div></div>
+    <div class="rule"><span class="tag do">DO</span><div><b>Add characters gradually (Koch method).</b>
+      Start with just K and M at full speed, drill until you're at 90% accuracy, then add one character.
+      You're always practicing real copying, never re-learning slow habits.</div></div>
+    <div class="rule"><span class="tag do">DO</span><div><b>Practice daily, in short sessions.</b>
+      The near-universal recommendation is 15–30 minutes every day, split in two if you can. Skipping days
+      sets you back more than short sessions ever will. Stop when your focus drops — tired practice trains sloppiness.</div></div>
+    <div class="rule"><span class="tag do">DO</span><div><b>Send what you copy.</b> Sending drills lock in
+      rhythm and spacing, and hearing your own fist decoded is instant feedback. Copy a word, then key it back.</div></div>
+    <div class="rule"><span class="tag do">DO</span><div><b>Train on real material early.</b> Callsigns,
+      Q-codes, CW abbreviations, and QSO phrases are what you'll actually hear on the air — they're all in
+      Copy practice.</div></div>
+    <div class="rule"><span class="tag dont">DON'T</span><div><b>Don't use charts, code trees, or mnemonics
+      to decode.</b> Visual lookups and sound-alikes add a translation step that hard-caps your speed around
+      10&nbsp;wpm and is painful to unlearn. The chart below is a reference for <i>sending</i> and curiosity —
+      your ears do the learning.</div></div>
+    <div class="rule"><span class="tag dont">DON'T</span><div><b>Don't learn at 5&nbsp;wpm.</b> Slow
+      characters teach you to count. Speed up the characters, stretch the spacing instead.</div></div>
+    <div class="rule"><span class="tag dont">DON'T</span><div><b>Don't wait until it's perfect.</b> Missing
+      a character? Let it go and catch the next one. Chasing a missed letter costs you the three after it.
+      (And protect your hearing — lowest comfortable volume, especially with headphones.)</div></div>
+  </div>
+
+  <div class="card">
+    <h2>Your path on this site</h2>
+    <div class="path">
+      <div class="stage"><div class="no">STAGE 1</div><h4>Hear the sounds</h4>
+        <p>Browse the character groups and drill each group until single characters are instant. Letters first, then numbers, then punctuation &amp; prosigns.</p>
+        <button class="btn" data-goto="chars">Characters →</button></div>
+      <div class="stage"><div class="no">STAGE 2</div><h4>Build the alphabet</h4>
+        <p>Work the 41-lesson Koch course. 90% accuracy unlocks the next character automatically. This is the daily-15-minutes core.</p>
+        <button class="btn" data-goto="learn">Koch course →</button></div>
+      <div class="stage"><div class="no">STAGE 3</div><h4>Copy real traffic</h4>
+        <p>Words, callsigns, abbreviations, and QSO exchanges. Push effective speed up as head-copy gets comfortable.</p>
+        <button class="btn" data-goto="copy">Copy practice →</button></div>
+      <div class="stage"><div class="no">STAGE 4</div><h4>Work your fist</h4>
+        <p>Straight key or iambic paddle with a live decoder. Send what you just copied and aim for clean spacing.</p>
+        <button class="btn" data-goto="send">Send practice →</button></div>
+    </div>
+    <div class="note">Goal benchmarks used by clubs and classes: solid copy at 13–15&nbsp;wpm is
+      conversational; 25&nbsp;wpm send/receive is the CW Operators Club bar. From zero, most people who
+      practice daily are making real QSOs in two to four months.</div>
+  </div>
+</section>
+
+<!-- ================= CHARACTERS ================= -->
+<section class="tab" id="tab-chars">
+  <div class="card">
+    <h2>Character library — click to hear, drill each group by ear</h2>
+    <div class="note" style="margin:0 0 14px">Drills teach by ear, gently: each new character is shown
+      on screen while its sound plays, starting from the shortest patterns (E, T, I…) and working up to the
+      longest. You'll never have to count elements and hunt through a chart — the drill tells you what
+      you're hearing before it ever quizzes you on it.</div>
+    <div class="legend">
+      <span><span class="sw"></span>Not started</span>
+      <span><span class="sw s2"></span>In progress</span>
+      <span><span class="sw s3"></span>Learned — 90%+ over 5+ answers</span>
+    </div>
+    <div id="groups"></div>
+  </div>
+  <div class="card" id="drillCard" style="display:none">
+    <h2>Group drill — <span id="drillName"></span></h2>
+    <div class="lcd">
+      <div class="dim" id="drillStatus">Listen…</div>
+      <div class="big" id="drillLcd"><span class="mark">?</span></div>
+    </div>
+    <div class="row-inline" style="margin-top:12px">
+      <input class="answer" id="drillAnswer" maxlength="2" autocomplete="off" spellcheck="false"
+        placeholder="type what you hear" style="max-width:240px">
+      <button class="btn" id="drillReplay">Replay</button>
+      <button class="btn" id="drillSkip">Skip</button>
+      <button class="btn" id="drillStop">End drill</button>
+    </div>
+    <div class="drillbar">
+      <span>Introduced <b id="drillProg">—</b></span>
+      <span>Streak <b id="drillStreak">0</b></span>
+      <span>Correct <b id="drillOk">0</b></span>
+      <span>Heard <b id="drillN">0</b></span>
+      <span>Accuracy <b id="drillPct">—</b></span>
+    </div>
+    <div class="note">How it works: each new character is <b>shown on screen while its sound plays three times</b>,
+      shortest patterns first. Then it's mixed into a quiz with the characters you've already met —
+      answer the new one correctly 3 times and the next character joins in. Prosigns: answer with the two
+      letters, e.g. <kbd>AR</kbd>, <kbd>SK</kbd>. Single characters check automatically as you type.</div>
+  </div>
+</section>
+
+<!-- ================= KOCH ================= -->
+<section class="tab" id="tab-learn">
+  <div class="card">
+    <h2>Koch method — lesson <span id="kochLessonNo">2</span> of 41</h2>
+    <div class="chips" id="kochChips"></div>
+    <div class="note">Characters arrive one at a time at full character speed. Finish a session at
+      <b>90% or better</b> and the next character unlocks. Keep the char-speed knob at 20+ and let
+      Farnsworth spacing carry the difficulty.</div>
+    <div class="row-inline" style="margin-top:12px">
+      <button class="btn" id="kochPrev">− char</button>
+      <button class="btn" id="kochNext">+ char</button>
+      <span class="field" style="margin:0"><label>Groups / session</label>
+        <select id="kochGroups"><option>5</option><option selected>10</option><option>15</option><option>20</option></select></span>
+      <span class="field" style="margin:0"><label>Group size</label>
+        <select id="kochGroupSize"><option>3</option><option selected>5</option><option>7</option></select></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="lcd">
+      <div class="dim" id="learnStatus">Ready — press Start</div>
+      <div class="big" id="learnLcd"><span class="mark">— · —</span></div>
+    </div>
+    <div class="row-inline" style="margin-top:12px">
+      <button class="btn primary" id="learnStart">Start session</button>
+      <button class="btn" id="learnReplay" disabled>Replay group</button>
+      <button class="btn" id="learnStop" disabled>Stop</button>
+    </div>
+    <div class="field" style="margin-top:12px">
+      <label>Type what you copy, then press Enter</label>
+      <textarea class="answer" id="learnAnswer" rows="1" autocomplete="off" spellcheck="false" disabled></textarea>
+    </div>
+    <div class="grade" id="learnGrade"></div>
+    <div class="statline" id="learnStats"></div>
+  </div>
+</section>
+
+<!-- ================= COPY ================= -->
+<section class="tab" id="tab-copy">
+  <div class="card">
+    <h2>Copy practice — real-world material</h2>
+    <div class="grid g3">
+      <div class="field"><label>Material</label>
+        <select id="copySource">
+          <option value="words">Common words</option>
+          <option value="abbr">CW abbreviations &amp; Q-codes</option>
+          <option value="calls">Callsigns</option>
+          <option value="qso">QSO phrases</option>
+          <option value="groups">Random groups (full charset)</option>
+          <option value="koch">Random groups (my Koch chars)</option>
+        </select></div>
+      <div class="field"><label>Items per round</label>
+        <select id="copyCount"><option>1</option><option selected>3</option><option>5</option></select></div>
+      <div class="field"><label>Reveal</label>
+        <select id="copyReveal"><option value="after" selected>After I answer</option><option value="live">Live while playing</option></select></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="lcd">
+      <div class="dim" id="copyStatus">Ready</div>
+      <div class="big" id="copyLcd"><span class="mark">· — · ·</span></div>
+    </div>
+    <div class="row-inline" style="margin-top:12px">
+      <button class="btn primary" id="copyStart">Play</button>
+      <button class="btn" id="copyReplay" disabled>Replay</button>
+      <button class="btn" id="copyStop" disabled>Stop</button>
+    </div>
+    <div class="field" style="margin-top:12px">
+      <label>Your copy — Enter to check</label>
+      <textarea class="answer" id="copyAnswer" rows="1" spellcheck="false" disabled></textarea>
+    </div>
+    <div class="grade" id="copyGrade"></div>
+    <div class="statline" id="copyStats"></div>
+  </div>
+</section>
+
+<!-- ================= SEND ================= -->
+<section class="tab" id="tab-send">
+  <div class="card">
+    <h2>Send practice — key the target</h2>
+    <div class="grid g3">
+      <div class="field"><label>Key type</label>
+        <select id="keyType">
+          <option value="straight">Straight key</option>
+          <option value="iambicA">Iambic paddle — mode A</option>
+          <option value="iambicB" selected>Iambic paddle — mode B</option>
+        </select></div>
+      <div class="field"><label>Target material</label>
+        <select id="sendSource">
+          <option value="koch">My Koch characters</option>
+          <option value="words" selected>Common words</option>
+          <option value="calls">Callsigns</option>
+          <option value="free">Freestyle (no target)</option>
+        </select></div>
+      <div class="field"><label>Decoder speed reference</label>
+        <select id="sendWpmMode"><option value="follow" selected>Follow char-speed knob</option><option value="adaptive">Adaptive (track my fist)</option></select></div>
+    </div>
+    <div class="row-inline"><button class="btn primary" id="sendNext">New target</button>
+      <button class="btn" id="sendHear">Hear it</button>
+      <button class="btn" id="sendClear">Clear</button></div>
+  </div>
+  <div class="card">
+    <div class="lcd">
+      <div class="dim">Target</div>
+      <div class="big" id="sendTarget">—</div>
+    </div>
+    <div class="lcd" style="margin-top:10px">
+      <div class="dim">Your keying <span id="sendWpmLive"></span></div>
+      <div class="big" id="sendDecoded"></div>
+      <div id="sendElems" style="margin-top:6px;white-space:nowrap;overflow:hidden"></div>
+    </div>
+    <div class="pads">
+      <div class="pad" id="padDit">DIT · <span style="opacity:.7">(left)</span></div>
+      <div class="pad" id="padDah">DAH — <span style="opacity:.7">(right)</span></div>
+    </div>
+    <div class="kbdhint" id="bindHint"></div>
+    <div class="grade" id="sendGrade"></div>
+  </div>
+</section>
+
+<!-- ================= SETUP ================= -->
+<section class="tab" id="tab-setup">
+  <div class="card">
+    <h2>Key bindings (keyboard &amp; USB adapters that emulate keys/mouse)</h2>
+    <div class="grid g3">
+      <div class="field"><label>Straight key</label><button class="btn bindbtn" id="bindStraight">Space</button></div>
+      <div class="field"><label>Paddle — dit</label><button class="btn bindbtn" id="bindDit">ControlLeft</button></div>
+      <div class="field"><label>Paddle — dah</label><button class="btn bindbtn" id="bindDah">ControlRight</button></div>
+    </div>
+    <div class="note">Click a button, then press the key you want. Most USB key/paddle adapters show up
+      as a keyboard (often the Ctrl keys) or as mouse buttons — bind them here. On-screen pads always work.</div>
+  </div>
+  <div class="card">
+    <h2>Serial adapter (Web Serial) <span class="pill" id="serialPill">not connected</span></h2>
+    <div class="row-inline">
+      <button class="btn" id="serialConnect">Connect serial port…</button>
+      <span class="field" style="margin:0"><label>Dit / straight line</label>
+        <select id="serialDit"><option value="clearToSend" selected>CTS</option><option value="dataSetReady">DSR</option><option value="dataCarrierDetect">DCD</option></select></span>
+      <span class="field" style="margin:0"><label>Dah line</label>
+        <select id="serialDah"><option value="dataSetReady" selected>DSR</option><option value="clearToSend">CTS</option><option value="dataCarrierDetect">DCD</option></select></span>
+    </div>
+    <div class="note">For interfaces that key the CTS/DSR/DCD lines of a COM port. Requires Chrome or Edge
+      on desktop. The page polls the control lines and feeds them into the same keyer as the keyboard.</div>
+  </div>
+  <div class="card">
+    <h2>Audio &amp; timing</h2>
+    <div class="grid g3">
+      <div class="field"><label>Rise/fall time (ms)</label><input type="number" id="riseMs" min="2" max="20" value="5"></div>
+      <div class="field"><label>Extra word spacing ×</label><input type="number" id="wordX" min="1" max="3" step="0.5" value="1"></div>
+      <div class="field"><label>Countdown dits before play</label><input type="number" id="lead" min="0" max="4" value="1"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Account &amp; cloud sync <span class="pill" id="acctPill">not configured</span></h2>
+    <div id="acctForms">
+      <div class="grid g3">
+        <div class="field"><label>Email</label><input type="text" id="acctEmail" autocomplete="username"></div>
+        <div class="field"><label>Password</label><input type="password" id="acctPass" autocomplete="current-password"></div>
+        <div class="field"><label>&nbsp;</label>
+          <div class="row-inline">
+            <button class="btn primary" id="acctSignin">Sign in</button>
+            <button class="btn" id="acctSignup">Create account</button>
+          </div></div>
+      </div>
+    </div>
+    <div id="acctSigned" style="display:none" class="row-inline">
+      <span class="statline" style="margin:0">Signed in as <b id="acctWho"></b></span>
+      <button class="btn" id="acctSync">Sync now</button>
+      <button class="btn" id="acctSignout">Sign out</button>
+    </div>
+    <div class="statline" id="acctStatus"></div>
+    <div class="note" id="acctHowto">Accounts keep your Koch lesson and character history in the cloud so
+      any device picks up where you left off. To enable: create a free Firebase project at
+      console.firebase.google.com → add a Web app → enable <b>Email/Password</b> under Authentication →
+      create a <b>Cloud Firestore</b> database → paste the config object into <code style="font-family:var(--mono)">FIREBASE_CONFIG</code>
+      at the top of this file's script. Without it, progress still saves in each browser locally.</div>
+  </div>
+  <div class="card">
+    <h2>Progress</h2>
+    <div class="row-inline">
+      <button class="btn" id="exportBtn">Copy progress to clipboard</button>
+      <button class="btn" id="resetBtn" style="border-color:var(--bad);color:var(--bad)">Reset all progress</button>
+    </div>
+    <div class="statline" id="setupStats"></div>
+    <div class="note">Progress is saved in this browser (localStorage). Use export to move it between devices.</div>
+  </div>
+</section>
+
+</main>
+
+<script>
+"use strict";
+/* =========================================================
+   CW TRAINER — learn & practice Morse code
+   ========================================================= */
+
+const MORSE = {
+ A:".-",B:"-...",C:"-.-.",D:"-..",E:".",F:"..-.",G:"--.",H:"....",I:"..",J:".---",
+ K:"-.-",L:".-..",M:"--",N:"-.",O:"---",P:".--.",Q:"--.-",R:".-.",S:"...",T:"-",
+ U:"..-",V:"...-",W:".--",X:"-..-",Y:"-.--",Z:"--..",
+ "0":"-----","1":".----","2":"..---","3":"...--","4":"....-","5":".....",
+ "6":"-....","7":"--...","8":"---..","9":"----.",
+ ".":".-.-.-",",":"--..--","?":"..--..","/":"-..-.","=":"-...-","+":".-.-."
+};
+/* character groups for the library + drills */
+const GROUPS = [
+ {id:"letters", name:"Letters", items:"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map(c=>({label:c,code:MORSE[c],answer:c}))},
+ {id:"numbers", name:"Numbers", items:"0123456789".split("").map(c=>({label:c,code:MORSE[c],answer:c}))},
+ {id:"symbols", name:"Punctuation & prosigns", items:[
+   {label:".",code:".-.-.-",answer:".",hint:"period"},
+   {label:",",code:"--..--",answer:",",hint:"comma"},
+   {label:"?",code:"..--..",answer:"?",hint:"question"},
+   {label:"/",code:"-..-.",answer:"/",hint:"slash"},
+   {label:"=",code:"-...-",answer:"=",hint:"BT · new section"},
+   {label:"+",code:".-.-.",answer:"+",hint:"AR · end of msg"},
+   {label:"⟨AR⟩",code:".-.-.",answer:"AR",hint:"end of message"},
+   {label:"⟨SK⟩",code:"...-.-",answer:"SK",hint:"end of contact"},
+   {label:"⟨BT⟩",code:"-...-",answer:"BT",hint:"break / new thought"},
+   {label:"⟨KN⟩",code:"-.--.",answer:"KN",hint:"named station only"}
+ ]}
+];
+const KOCH_ORDER = "KMURESNAPTLWI.JZ=FOY,VG5/Q92H38B?47C1D60X".split("");
+
+const WORDS = ("the and you that was for are with his they this have from one had word but not what all were when your can said there use each which she how their will other about out many then them these some her would make like him into time has look two more write see number way could people than first been call who its now find long down day did get come made part over new sound take only little work know place year live back give most very after thing our just name good sentence man think say great where help through much before line right too mean old any same tell boy follow came want show also around form three small set put end does another well large must big even such because turn here why ask went men read need land different home us move try kind hand picture again change off play spell air away animal house point page letter mother answer found study still learn should world high every near add food between own below country plant last school father keep tree never start city earth eye light thought head under story saw left dont few while along might close something seem next hard open example begin life always those both paper together got group often run").toUpperCase().split(" ");
+
+const ABBR = "CQ DE K KN 73 88 QTH QRZ QRM QRN QRP QRO QSB QSY QSL QRL QRS RST HW CPY TU TNX GM GA GE GN OM YL XYL RIG ANT WX PWR HR ES FB PSE AGN NR BK SK AR HI CUL DX UR VY OP 5NN".split(" ");
+
+const QSO = ["CQ CQ CQ DE","UR RST 599 599","QTH IS TAMPA TAMPA","NAME IS EGOR EGOR","RIG IS 100 W ES DIPOLE","WX HR SUNNY 90F","TNX FER CALL","HW CPY?","73 ES GUD DX","PSE QRS"];
+
+function randCall(){
+  const p1="KWN", pre2=["VE","DL","JA","G0","EA","F5","OK","SP","PY","VK"];
+  const L=()=>String.fromCharCode(65+Math.floor(Math.random()*26));
+  const D=()=>String.fromCharCode(48+Math.floor(Math.random()*10));
+  if(Math.random()<0.6){
+    const pre=p1[Math.floor(Math.random()*3)]+(Math.random()<.4?L():"");
+    return pre+D()+L()+L()+(Math.random()<.7?L():"");
+  }
+  const pre=pre2[Math.floor(Math.random()*pre2.length)];
+  return pre.replace(/\d/,"")+D()+L()+L()+(Math.random()<.6?L():"");
+}
+
+/* ---------------- persistence (safe wrapper) ---------------- */
+/* To enable accounts & cloud sync, paste your Firebase web-app config object here.
+   See the Account card in Setup for the 3-minute walkthrough. Example shape:
+   const FIREBASE_CONFIG = { apiKey:"...", authDomain:"...", projectId:"...", appId:"..." };  */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCZ3EFVXsZsM9L4vYVy-ApMgaNSg2qtTj0",
+  authDomain: "cw-trainer-3f85d.firebaseapp.com",
+  projectId: "cw-trainer-3f85d",
+  storageBucket: "cw-trainer-3f85d.firebasestorage.app",
+  messagingSenderId: "472743351264",
+  appId: "1:472743351264:web:c997c24d995cca297d9185"
+};
+
+const store={
+  get(k,d){try{const v=localStorage.getItem("cwt_"+k);return v==null?d:JSON.parse(v)}catch(e){return d}},
+  set(k,v){try{localStorage.setItem("cwt_"+k,JSON.stringify(v))}catch(e){}
+    if(k==="charStats"||k==="kochLesson"){markDirty();refreshLibrary();}}
+};
+let charStats = store.get("charStats",{});
+let kochLesson = store.get("kochLesson",2);
+
+/* ---------------- settings ---------------- */
+const $=id=>document.getElementById(id);
+const S={
+  charWpm:+store.get("charWpm",20), effWpm:+store.get("effWpm",10),
+  tone:+store.get("tone",600), vol:+store.get("vol",60),
+  bindStraight:store.get("bindStraight","Space"),
+  bindDit:store.get("bindDit","ControlLeft"),
+  bindDah:store.get("bindDah","ControlRight")
+};
+function hookRange(id,key,unit,cb){
+  const el=$(id),lab=$(id+"V");
+  el.value=S[key]; lab.textContent=S[key]+" "+unit;
+  el.addEventListener("input",()=>{S[key]=+el.value;lab.textContent=el.value+" "+unit;
+    store.set(key,S[key]); if(cb)cb();});
+}
+hookRange("charWpm","charWpm","wpm",syncEff);
+hookRange("effWpm","effWpm","wpm",syncEff);
+hookRange("tone","tone","Hz");
+hookRange("vol","vol","%");
+function syncEff(){ if(S.effWpm>S.charWpm){S.effWpm=S.charWpm;$("effWpm").value=S.effWpm;$("effWpmV").textContent=S.effWpm+" wpm";store.set("effWpm",S.effWpm);} }
+syncEff();
+
+/* ---------------- audio engine ---------------- */
+let AC=null, osc=null, gain=null;
+function audio(){
+  if(AC){ if(AC.state==="suspended")AC.resume(); return AC; }
+  AC=new (window.AudioContext||window.webkitAudioContext)();
+  osc=AC.createOscillator(); gain=AC.createGain();
+  osc.type="sine"; gain.gain.value=0;
+  osc.connect(gain); gain.connect(AC.destination); osc.start();
+  return AC;
+}
+const rise=()=> (+$("riseMs").value||5)/1000;
+function toneOn(){ const c=audio(); osc.frequency.setValueAtTime(S.tone,c.currentTime);
+  gain.gain.cancelScheduledValues(c.currentTime);
+  gain.gain.setTargetAtTime(S.vol/100*0.5,c.currentTime,rise()/3); lampOn(true); }
+function toneOff(){ const c=audio();
+  gain.gain.cancelScheduledValues(c.currentTime);
+  gain.gain.setTargetAtTime(0,c.currentTime,rise()/3); lampOn(false); }
+function lampOn(on){ $("lamp").classList.toggle("on",on); }
+
+/* timing */
+const ditSec = ()=> 1.2/S.charWpm;
+function spacing(){ // Farnsworth: stretch inter-char/word spacing only
+  const c=S.charWpm, s=Math.min(S.effWpm,c);
+  const u=ditSec();
+  let x=u;
+  if(s<c) x=(60/s - 37.2/c)/19;
+  return {u, charGap:3*x, wordGap:7*x*(+$("wordX").value||1)};
+}
+
+/* ---------------- player ---------------- */
+let playTimers=[], playing=false;
+function stopPlayback(){
+  playing=false;
+  playTimers.forEach(t=>clearTimeout(t)); playTimers=[];
+  if(AC){ gain.gain.cancelScheduledValues(AC.currentTime); gain.gain.setTargetAtTime(0,AC.currentTime,0.003); }
+  lampOn(false);
+}
+function scheduleCode(code,t,u,vol,r,c){ // schedule one character's elements, return new t
+  [...code].forEach(el=>{
+    const dur=(el==="."?1:3)*u;
+    gain.gain.setTargetAtTime(vol,t,r/3);
+    gain.gain.setTargetAtTime(0,t+dur,r/3);
+    playTimers.push(setTimeout(()=>lampOn(true),(t-c.currentTime)*1000));
+    playTimers.push(setTimeout(()=>lampOn(false),(t+dur-c.currentTime)*1000));
+    t+=dur+u;
+  });
+  return t;
+}
+function playText(text,{onChar,onDone}={}){
+  stopPlayback(); const c=audio(); playing=true;
+  const {u,charGap,wordGap}=spacing();
+  let t=c.currentTime+0.15+(+$("lead").value||0)*u*2;
+  const vol=S.vol/100*0.5, r=rise();
+  const words=text.toUpperCase().split(/\s+/);
+  words.forEach(word=>{
+    [...word].forEach(ch=>{
+      const code=MORSE[ch]; if(!code)return;
+      const tChar=t;
+      t=scheduleCode(code,t,u,vol,r,c);
+      t+=charGap-u;
+      if(onChar)playTimers.push(setTimeout(()=>onChar(ch),(tChar-c.currentTime)*1000));
+    });
+    t+=wordGap-charGap;
+  });
+  playTimers.push(setTimeout(()=>{playing=false;lampOn(false);if(onDone)onDone();},(t-c.currentTime)*1000+120));
+}
+function playCode(code,{onDone}={}){ // raw dit/dah string (prosigns)
+  stopPlayback(); const c=audio(); playing=true;
+  const u=ditSec(), vol=S.vol/100*0.5, r=rise();
+  let t=c.currentTime+0.15+(+$("lead").value||0)*u*2;
+  t=scheduleCode(code,t,u,vol,r,c);
+  playTimers.push(setTimeout(()=>{playing=false;lampOn(false);if(onDone)onDone();},(t-c.currentTime)*1000+120));
+}
+
+/* ---------------- grading ---------------- */
+function normalize(s){return s.toUpperCase().replace(/\s+/g," ").trim();}
+function gradeHTML(sent,got){
+  sent=normalize(sent); got=normalize(got);
+  let html="",correct=0;
+  const n=Math.max(sent.length,got.length);
+  for(let i=0;i<n;i++){
+    const a=sent[i]||"·", b=got[i];
+    const hit=b===a;
+    if(sent[i]){
+      if(/\S/.test(sent[i])){ const st=charStats[a]||(charStats[a]={n:0,ok:0}); st.n++; if(hit)st.ok++; }
+      if(hit)correct++;
+    }
+    html+=`<span class="${hit?"hit":"miss"}">${a===" "?"&nbsp;":a}</span>`;
+  }
+  store.set("charStats",charStats);
+  return {html,pct:sent.length?Math.round(100*correct/sent.length):0};
+}
+
+/* =========================================================
+   CHARACTER LIBRARY + GROUP DRILLS (ICR)
+   ========================================================= */
+(function buildGroups(){
+  const wrap=$("groups");
+  GROUPS.forEach(g=>{
+    const head=document.createElement("div");
+    head.className="grouphead";
+    head.innerHTML=`<h3>${g.name}<span class="n">${g.items.length}</span></h3>`;
+    const btn=document.createElement("button");
+    btn.className="btn primary"; btn.textContent="Drill "+g.name.toLowerCase();
+    btn.onclick=()=>startDrill(g);
+    head.appendChild(btn);
+    wrap.appendChild(head);
+    const tbl=document.createElement("div");
+    tbl.className="charttbl"; tbl.style.marginBottom="20px";
+    g.items.forEach(it=>{
+      const d=document.createElement("div");
+      d.className="cw-cell";
+      d.title=(it.hint||it.label)+" — click to play";
+      d.innerHTML=`<span class="ch">${it.label}</span><span class="code">${it.code.replace(/\./g,"·").replace(/-/g,"−")}</span><span class="cellpct"></span>`;
+      d.onclick=()=>playCode(it.code);
+      it._el=d; it._pct=d.querySelector(".cellpct");
+      tbl.appendChild(d);
+    });
+    wrap.appendChild(tbl);
+  });
+})();
+
+/* recolor library cells from accuracy history: learned = 90%+ over 5+ answers */
+function refreshLibrary(){
+  if(typeof GROUPS==="undefined")return;
+  GROUPS.forEach(g=>g.items.forEach(it=>{
+    if(!it._el)return;
+    const st=charStats[it.answer];
+    const n=st?st.n:0, pct=n?Math.round(100*st.ok/n):0;
+    const learned=n>=5&&pct>=90;
+    it._el.classList.toggle("learned",learned);
+    it._el.classList.toggle("seen",n>0&&!learned);
+    it._pct.textContent=n?pct+"%":"";
+  }));
+}
+refreshLibrary();
+
+const drill={group:null,items:[],introduced:0,cur:null,n:0,ok:0,streak:0,
+  waiting:false,phase:"intro",newOk:0,session:0};
+const NEW_CHAR_GOAL=3;          // correct answers on the new char before the next one joins
+function codeWeight(code){       // sort key: total sound length (dit=1, dah=3, +1 gap between elements)
+  return [...code].reduce((a,e)=>a+(e==="."?1:3),0)+(code.length-1);
+}
+function fmtCode(code){return code.replace(/\./g,"·").replace(/-/g,"−");}
+function startDrill(g){
+  drill.group=g; drill.session++;
+  drill.items=[...g.items].sort((a,b)=>codeWeight(a.code)-codeWeight(b.code));
+  drill.introduced=0; drill.n=0; drill.ok=0; drill.streak=0; drill.newOk=0; drill.cur=null;
+  $("drillCard").style.display="block";
+  $("drillName").textContent=g.name;
+  drillStats();
+  $("drillCard").scrollIntoView({behavior:"smooth"});
+  introduceNext();
+}
+function introduceNext(){
+  if(drill.introduced>=drill.items.length){quizNext();return;}
+  const it=drill.items[drill.introduced];
+  drill.introduced++; drill.newOk=0; drill.phase="intro";
+  drill.cur=it; drill.waiting=false;
+  drillStats();
+  const inp=$("drillAnswer"); inp.value=""; inp.disabled=true;
+  $("drillStatus").textContent=`New character — watch and listen (${drill.introduced} of ${drill.items.length})`;
+  $("drillLcd").innerHTML=`${it.label} <span style="font-size:18px;color:var(--amber-dim)">${fmtCode(it.code)}</span>`;
+  introPlay(it,3,drill.session);
+}
+function introPlay(it,left,session){
+  if(session!==drill.session)return;           // drill was restarted/closed
+  playCode(it.code,{onDone:()=>{
+    if(session!==drill.session)return;
+    if(left>1){playTimers.push(setTimeout(()=>introPlay(it,left-1,session),650));}
+    else playTimers.push(setTimeout(()=>{if(session===drill.session)quizNext();},900));
+  }});
+}
+function quizNext(){
+  drill.phase="quiz";
+  const pool=drill.items.slice(0,drill.introduced);
+  const newest=pool[pool.length-1];
+  let next;
+  if(drill.introduced<drill.items.length && pool.length>1 && Math.random()<0.5) next=newest;
+  else{
+    do{next=pool[Math.floor(Math.random()*pool.length)];}
+    while(pool.length>1&&drill.cur&&next.answer===drill.cur.answer&&Math.random()<0.8);
+  }
+  drill.cur=next; drill.waiting=false;
+  const session=drill.session;
+  $("drillLcd").innerHTML='<span class="mark">?</span>';
+  $("drillStatus").textContent="Listen…";
+  const inp=$("drillAnswer"); inp.value=""; inp.disabled=true;
+  playCode(next.code,{onDone:()=>{
+    if(session!==drill.session)return;
+    drill.waiting=true; inp.disabled=false; inp.focus();
+    $("drillStatus").textContent="Type what you heard";
+  }});
+}
+function drillCheck(){
+  if(!drill.waiting)return;
+  const want=drill.cur.answer, got=normalize($("drillAnswer").value);
+  if(want.length===1 && got.length<1)return;
+  if(want.length===2 && got.length<2)return;
+  drill.waiting=false; drill.n++;
+  $("drillAnswer").disabled=true;
+  const hit=got===want;
+  const st=charStats[want]||(charStats[want]={n:0,ok:0}); st.n++;
+  if(hit){drill.ok++;drill.streak++;st.ok++;}
+  else drill.streak=0;
+  store.set("charStats",charStats);
+  const newest=drill.items[drill.introduced-1];
+  if(hit&&drill.cur===newest)drill.newOk++;
+  $("drillLcd").innerHTML=`${drill.cur.label} <span style="font-size:16px;color:${hit?"var(--ok)":"var(--bad)"}">${fmtCode(drill.cur.code)} ${hit?"✓":"✗ you said "+(got||"—")}</span>`;
+  $("drillStatus").textContent=hit?"Correct":"Missed — hear it again as you read it";
+  drillStats(); renderKoch();
+  if(!hit)playCode(drill.cur.code);
+  const unlockNext = hit && drill.newOk>=NEW_CHAR_GOAL && drill.introduced<drill.items.length;
+  const session=drill.session;
+  setTimeout(()=>{
+    if(session!==drill.session)return;
+    if(unlockNext)introduceNext(); else quizNext();
+  },hit?700:1900);
+}
+$("drillAnswer").addEventListener("input",()=>{
+  if(drill.cur&&drill.cur.answer.length===1)drillCheck();
+});
+$("drillAnswer").addEventListener("keydown",e=>{
+  if(e.key==="Enter"){e.preventDefault();drillCheck();}
+});
+$("drillReplay").onclick=()=>{
+  if(!drill.cur)return;
+  const inp=$("drillAnswer"), wasWaiting=drill.waiting, session=drill.session;
+  if(wasWaiting){drill.waiting=false;inp.disabled=true;$("drillStatus").textContent="Listen…";}
+  playCode(drill.cur.code,{onDone:()=>{
+    if(session!==drill.session||!wasWaiting)return;
+    drill.waiting=true; inp.disabled=false; inp.focus();
+    $("drillStatus").textContent="Type what you heard";
+  }});
+};
+$("drillSkip").onclick=()=>{
+  if(drill.phase==="intro"){quizNext();return;}       // skip straight to the quiz
+  drill.streak=0;
+  if(drill.introduced<drill.items.length)introduceNext(); // skip ahead to the next new character
+  else quizNext();
+};
+$("drillStop").onclick=()=>{drill.session++;stopPlayback();$("drillCard").style.display="none";};
+function drillStats(){
+  $("drillProg").textContent=drill.items.length?`${drill.introduced} / ${drill.items.length}`:"—";
+  $("drillStreak").textContent=drill.streak;
+  $("drillOk").textContent=drill.ok;
+  $("drillN").textContent=drill.n;
+  $("drillPct").textContent=drill.n?Math.round(100*drill.ok/drill.n)+"%":"—";
+}
+
+/* =========================================================
+   KOCH COURSE
+   ========================================================= */
+function kochChars(){ return KOCH_ORDER.slice(0,kochLesson); }
+function renderKoch(){
+  $("kochLessonNo").textContent=kochLesson;
+  const wrap=$("kochChips"); wrap.innerHTML="";
+  KOCH_ORDER.forEach((ch,i)=>{
+    const d=document.createElement("div");
+    d.className="chip"+(i<kochLesson-1?" learned":i===kochLesson-1?" current":"");
+    const st=charStats[ch];
+    d.innerHTML=ch+(st&&st.n?`<span class="pct">${Math.round(100*st.ok/st.n)}%</span>`:`<span class="pct">&nbsp;</span>`);
+    wrap.appendChild(d);
+  });
+}
+$("kochPrev").onclick=()=>{kochLesson=Math.max(2,kochLesson-1);store.set("kochLesson",kochLesson);renderKoch();};
+$("kochNext").onclick=()=>{kochLesson=Math.min(KOCH_ORDER.length,kochLesson+1);store.set("kochLesson",kochLesson);renderKoch();};
+renderKoch();
+
+let learn={groups:[],idx:0,active:false,score:[],cur:""};
+function randGroup(chars,n){let s="";for(let i=0;i<n;i++)s+=chars[Math.floor(Math.random()*chars.length)];return s;}
+$("learnStart").onclick=()=>{
+  audio();
+  const gN=+$("kochGroups").value, gS=+$("kochGroupSize").value;
+  learn={groups:Array.from({length:gN},()=>randGroup(kochChars(),gS)),idx:0,active:true,score:[]};
+  $("learnStop").disabled=false;$("learnReplay").disabled=false;$("learnAnswer").disabled=false;
+  $("learnGrade").innerHTML="";$("learnStats").textContent="";
+  learnPlay();
+};
+function learnPlay(){
+  if(!learn.active)return;
+  learn.cur=learn.groups[learn.idx];
+  $("learnStatus").textContent=`Group ${learn.idx+1} / ${learn.groups.length} — copy, type, Enter`;
+  $("learnLcd").innerHTML='<span class="mark">···</span>';
+  $("learnAnswer").value=""; $("learnAnswer").focus();
+  playText(learn.cur,{onDone:()=>{$("learnLcd").innerHTML='<span class="mark">?</span>';}});
+}
+$("learnReplay").onclick=()=>{ if(learn.active)playText(learn.cur); };
+$("learnStop").onclick=learnEnd;
+function learnEnd(){
+  stopPlayback(); learn.active=false;
+  $("learnStop").disabled=true;$("learnReplay").disabled=true;$("learnAnswer").disabled=true;
+  if(learn.score.length){
+    const pct=Math.round(learn.score.reduce((a,b)=>a+b,0)/learn.score.length);
+    let msg=`Session accuracy: <b>${pct}%</b>`;
+    if(pct>=90&&kochLesson<KOCH_ORDER.length){
+      kochLesson++;store.set("kochLesson",kochLesson);renderKoch();
+      msg+=` — new character unlocked: <b>${KOCH_ORDER[kochLesson-1]}</b> (${MORSE[KOCH_ORDER[kochLesson-1]]})`;
+    } else if(pct<90) msg+=" — 90% unlocks the next character. Stay on it, it comes fast.";
+    $("learnStats").innerHTML=msg;
+  }
+  $("learnStatus").textContent="Session ended";
+}
+$("learnAnswer").addEventListener("keydown",e=>{
+  if(e.key!=="Enter")return; e.preventDefault();
+  if(!learn.active)return;
+  const {html,pct}=gradeHTML(learn.cur,$("learnAnswer").value);
+  learn.score.push(pct);
+  $("learnGrade").innerHTML=html+` <span style="color:var(--muted)">— ${pct}%</span>`;
+  $("learnLcd").textContent=learn.cur;
+  renderKoch();
+  learn.idx++;
+  if(learn.idx>=learn.groups.length){learnEnd();return;}
+  setTimeout(learnPlay,1400);
+});
+
+/* =========================================================
+   COPY PRACTICE
+   ========================================================= */
+let copy={text:"",hist:[]};
+function pick(arr,n){const o=[];for(let i=0;i<n;i++)o.push(arr[Math.floor(Math.random()*arr.length)]);return o.join(" ");}
+function copyMaterial(){
+  const n=+$("copyCount").value, src=$("copySource").value;
+  if(src==="words")return pick(WORDS,n);
+  if(src==="abbr")return pick(ABBR,n);
+  if(src==="calls")return Array.from({length:n},randCall).join(" ");
+  if(src==="qso")return pick(QSO,1);
+  if(src==="groups")return Array.from({length:n},()=>randGroup(Object.keys(MORSE),5)).join(" ");
+  return Array.from({length:n},()=>randGroup(kochChars(),5)).join(" ");
+}
+$("copyStart").onclick=()=>{
+  audio(); copy.text=copyMaterial();
+  $("copyStop").disabled=false;$("copyReplay").disabled=false;$("copyAnswer").disabled=false;
+  $("copyAnswer").value="";$("copyGrade").innerHTML="";
+  $("copyLcd").innerHTML='<span class="mark">···</span>';
+  $("copyStatus").textContent="Sending — copy, type, Enter";
+  const live=$("copyReveal").value==="live";
+  let shown="";
+  playText(copy.text,{
+    onChar:ch=>{if(live){shown+=ch;$("copyLcd").textContent=shown;}},
+    onDone:()=>{$("copyStatus").textContent="Done — type your copy";if(!live)$("copyLcd").innerHTML='<span class="mark">?</span>';$("copyAnswer").focus();}
+  });
+  $("copyAnswer").focus();
+};
+$("copyReplay").onclick=()=>{if(copy.text)playText(copy.text);};
+$("copyStop").onclick=()=>{stopPlayback();$("copyStatus").textContent="Stopped";};
+$("copyAnswer").addEventListener("keydown",e=>{
+  if(e.key!=="Enter")return; e.preventDefault();
+  if(!copy.text)return;
+  const {html,pct}=gradeHTML(copy.text,$("copyAnswer").value);
+  copy.hist.push(pct);
+  $("copyGrade").innerHTML=html+` <span style="color:var(--muted)">— ${pct}%</span>`;
+  $("copyLcd").textContent=copy.text;
+  const avg=Math.round(copy.hist.reduce((a,b)=>a+b,0)/copy.hist.length);
+  $("copyStats").innerHTML=`Round: <b>${pct}%</b> · session average: <b>${avg}%</b> · rounds: ${copy.hist.length}`;
+});
+
+/* =========================================================
+   SEND PRACTICE — straight key + iambic keyer + decoder
+   ========================================================= */
+const send={target:"",buf:"",out:"",downAt:0,charTimer:null,wordTimer:null,
+  ditDown:false,dahDown:false,busy:false,memDit:false,memDah:false,lastEl:null,adaptDit:null};
+function sendDit(){
+  if($("sendWpmMode").value==="adaptive"&&send.adaptDit)return send.adaptDit;
+  return 1200/S.charWpm;
+}
+function pushElem(el){
+  send.buf+=el;
+  const sp=document.createElement("span");
+  sp.className="elm "+(el==="."?"dit":"dah");
+  const box=$("sendElems"); box.appendChild(sp);
+  while(box.childNodes.length>60)box.removeChild(box.firstChild);
+  armGaps();
+}
+function armGaps(){
+  clearTimeout(send.charTimer);clearTimeout(send.wordTimer);
+  const d=sendDit();
+  send.charTimer=setTimeout(finalizeChar,d*2.6);
+  send.wordTimer=setTimeout(()=>{if(send.out&&!send.out.endsWith(" ")){send.out+=" ";renderSend();$("sendElems").appendChild(gapEl());}},d*7);
+}
+function gapEl(){const s=document.createElement("span");s.className="elm gap";return s;}
+function finalizeChar(){
+  if(!send.buf)return;
+  const ch=Object.keys(MORSE).find(k=>MORSE[k]===send.buf)||"■";
+  send.out+=ch; send.buf="";
+  renderSend(); checkSend();
+}
+function renderSend(){$("sendDecoded").textContent=send.out||"\u00a0";}
+function checkSend(){
+  if(!send.target)return;
+  const a=normalize(send.out), b=normalize(send.target);
+  if(a===b){$("sendGrade").innerHTML=`<span class="hit">${b}</span> <span style="color:var(--muted)">— good fist! Press “New target”.</span>`;}
+  else if(!b.startsWith(a)){$("sendGrade").innerHTML=`<span class="miss">${a}</span> <span style="color:var(--muted)">— off track, Clear and try again</span>`;}
+  else $("sendGrade").textContent="";
+}
+function straightDown(){
+  if(send.busy)return; send.busy=true;
+  toneOn(); send.downAt=performance.now();
+  clearTimeout(send.charTimer);clearTimeout(send.wordTimer);
+}
+function straightUp(){
+  if(!send.busy)return; send.busy=false;
+  toneOff();
+  const dur=performance.now()-send.downAt;
+  const d=sendDit();
+  const el=dur<d*2?".":"-";
+  if($("sendWpmMode").value==="adaptive"){
+    const estDit=el==="."?dur:dur/3;
+    send.adaptDit=send.adaptDit?send.adaptDit*0.7+estDit*0.3:estDit;
+    $("sendWpmLive").textContent="· ~"+Math.round(1200/send.adaptDit)+" wpm";
+  }
+  pushElem(el);
+}
+function paddle(el,down){
+  if(el==="dit")send.ditDown=down; else send.dahDown=down;
+  if(down&&!send.busy)keyerLoop();
+}
+function keyerLoop(){
+  if(send.busy)return;
+  let next=null;
+  if(send.memDit){next="dit";send.memDit=false;}
+  else if(send.memDah){next="dah";send.memDah=false;}
+  else if(send.ditDown&&send.dahDown)next=send.lastEl==="dit"?"dah":"dit";
+  else if(send.ditDown)next="dit";
+  else if(send.dahDown)next="dah";
+  if(!next){armGaps();return;}
+  send.busy=true; send.lastEl=next;
+  const d=1200/S.charWpm;
+  const dur=(next==="dit"?1:3)*d;
+  toneOn();
+  clearTimeout(send.charTimer);clearTimeout(send.wordTimer);
+  const mode=$("keyType").value;
+  const sampler=setInterval(()=>{
+    if(mode==="iambicB"){
+      if(next==="dit"&&send.dahDown&&send.ditDown)send.memDah=true;
+      if(next==="dah"&&send.ditDown&&send.dahDown)send.memDit=true;
+    }
+  },10);
+  setTimeout(()=>{
+    toneOff(); clearInterval(sampler);
+    pushElem(next==="dit"?".":"-");
+    setTimeout(()=>{send.busy=false;keyerLoop();},d);
+  },dur);
+}
+function keyInput(kind,down){
+  audio();
+  const type=$("keyType").value;
+  if(type==="straight"){down?straightDown():straightUp();}
+  else paddle(kind==="dah"?"dah":"dit",down);
+}
+[["padDit","dit"],["padDah","dah"]].forEach(([id,kind])=>{
+  const el=$(id);
+  const dn=e=>{e.preventDefault();el.classList.add("down");keyInput(kind,true);};
+  const up=e=>{e.preventDefault();el.classList.remove("down");keyInput(kind,false);};
+  el.addEventListener("pointerdown",dn);
+  el.addEventListener("pointerup",up);
+  el.addEventListener("pointerleave",up);
+});
+const heldKeys=new Set();
+document.addEventListener("keydown",e=>{
+  if(e.target.tagName==="TEXTAREA"||e.target.tagName==="INPUT"||e.target.tagName==="SELECT")return;
+  if(binding){setBinding(e.code);e.preventDefault();return;}
+  if(heldKeys.has(e.code))return;
+  const type=$("keyType").value;
+  if(type==="straight"&&e.code===S.bindStraight){heldKeys.add(e.code);keyInput("dit",true);e.preventDefault();}
+  else if(e.code===S.bindDit){heldKeys.add(e.code);keyInput("dit",true);e.preventDefault();}
+  else if(e.code===S.bindDah){heldKeys.add(e.code);keyInput("dah",true);e.preventDefault();}
+});
+document.addEventListener("keyup",e=>{
+  if(!heldKeys.has(e.code))return;
+  heldKeys.delete(e.code);
+  const type=$("keyType").value;
+  if(type==="straight"&&e.code===S.bindStraight)keyInput("dit",false);
+  else if(e.code===S.bindDit)keyInput("dit",false);
+  else if(e.code===S.bindDah)keyInput("dah",false);
+});
+function sendMaterial(){
+  const src=$("sendSource").value;
+  if(src==="free")return "";
+  if(src==="koch")return randGroup(kochChars(),5);
+  if(src==="calls")return randCall();
+  return WORDS[Math.floor(Math.random()*WORDS.length)];
+}
+$("sendNext").onclick=()=>{
+  send.target=sendMaterial();send.out="";send.buf="";send.adaptDit=null;
+  $("sendTarget").textContent=send.target||"(freestyle)";
+  $("sendElems").innerHTML="";$("sendGrade").textContent="";renderSend();
+};
+$("sendHear").onclick=()=>{if(send.target)playText(send.target);};
+$("sendClear").onclick=()=>{send.out="";send.buf="";$("sendElems").innerHTML="";$("sendGrade").textContent="";renderSend();};
+function bindHint(){
+  $("bindHint").innerHTML=`Straight key: <kbd>${S.bindStraight}</kbd> · Paddle dit: <kbd>${S.bindDit}</kbd> · dah: <kbd>${S.bindDah}</kbd> — change in Setup. On-screen pads work with mouse/touch.`;
+}
+bindHint();
+
+/* =========================================================
+   SETUP
+   ========================================================= */
+let binding=null;
+function setBinding(code){
+  S[binding]=code; store.set(binding,code);
+  $("bindStraight").textContent=S.bindStraight;
+  $("bindDit").textContent=S.bindDit;
+  $("bindDah").textContent=S.bindDah;
+  binding=null; bindHint();
+}
+["bindStraight","bindDit","bindDah"].forEach(key=>{
+  $(key).textContent=S[key];
+  $(key).onclick=()=>{binding=key;$(key).textContent="press a key…";};
+});
+
+let serialPort=null, serialPoll=null, sPrev={dit:false,dah:false};
+$("serialConnect").onclick=async()=>{
+  if(!("serial" in navigator)){$("serialPill").textContent="needs Chrome/Edge";return;}
+  try{
+    serialPort=await navigator.serial.requestPort();
+    await serialPort.open({baudRate:9600});
+    $("serialPill").textContent="connected";$("serialPill").classList.add("ok");
+    clearInterval(serialPoll);
+    serialPoll=setInterval(async()=>{
+      try{
+        const sig=await serialPort.getSignals();
+        const dit=!!sig[$("serialDit").value], dah=!!sig[$("serialDah").value];
+        if(dit!==sPrev.dit){sPrev.dit=dit;keyInput("dit",dit);}
+        if($("keyType").value!=="straight"&&dah!==sPrev.dah){sPrev.dah=dah;keyInput("dah",dah);}
+      }catch(e){clearInterval(serialPoll);$("serialPill").textContent="disconnected";$("serialPill").classList.remove("ok");}
+    },8);
+  }catch(e){/* user cancelled */}
+};
+
+function setupStats(){
+  const entries=Object.entries(charStats).filter(([,v])=>v.n>0);
+  if(!entries.length){$("setupStats").textContent="No copy attempts recorded yet.";return;}
+  const tot=entries.reduce((a,[,v])=>a+v.n,0), ok=entries.reduce((a,[,v])=>a+v.ok,0);
+  const worst=entries.sort((a,b)=>(a[1].ok/a[1].n)-(b[1].ok/b[1].n)).slice(0,5)
+    .map(([k,v])=>`${k} ${Math.round(100*v.ok/v.n)}%`).join(" · ");
+  $("setupStats").innerHTML=`Koch lesson <b>${kochLesson}</b> · ${tot} characters copied · overall <b>${Math.round(100*ok/tot)}%</b><br>Weakest: ${worst}`;
+}
+setupStats();
+$("resetBtn").onclick=()=>{
+  if(!confirm("Reset Koch progress and all character statistics?"))return;
+  charStats={};kochLesson=2;store.set("charStats",{});store.set("kochLesson",2);
+  renderKoch();setupStats();
+};
+$("exportBtn").onclick=async()=>{
+  const data=JSON.stringify({kochLesson,charStats},null,1);
+  try{await navigator.clipboard.writeText(data);$("exportBtn").textContent="Copied ✓";
+    setTimeout(()=>$("exportBtn").textContent="Copy progress to clipboard",1500);}catch(e){alert(data);}
+};
+
+/* =========================================================
+   ACCOUNTS & CLOUD SYNC (Firebase — optional)
+   ========================================================= */
+const FB={auth:null,db:null,user:null};
+let syncTimer=null;
+function markDirty(){
+  try{localStorage.setItem("cwt_updatedAt",JSON.stringify(Date.now()))}catch(e){}
+  if(FB.user){clearTimeout(syncTimer);syncTimer=setTimeout(pushSync,2000);}
+}
+function localUpdated(){return store.get("updatedAt",0);}
+function loadScript(src){return new Promise((res,rej)=>{
+  const s=document.createElement("script");s.src=src;s.onload=res;s.onerror=()=>rej(new Error("failed to load "+src));
+  document.head.appendChild(s);});}
+async function initFirebase(){
+  if(!FIREBASE_CONFIG)return; // pill stays "not configured"
+  try{
+    const v="10.12.2", base=`https://www.gstatic.com/firebasejs/${v}/`;
+    await loadScript(base+"firebase-app-compat.js");
+    await loadScript(base+"firebase-auth-compat.js");
+    await loadScript(base+"firebase-firestore-compat.js");
+    firebase.initializeApp(FIREBASE_CONFIG);
+    FB.auth=firebase.auth(); FB.db=firebase.firestore();
+    $("acctPill").textContent="ready";
+    $("acctHowto").style.display="none";
+    FB.auth.onAuthStateChanged(u=>{FB.user=u;acctUI();if(u)pullSync();});
+  }catch(e){
+    $("acctPill").textContent="offline";
+    $("acctStatus").textContent="Could not load account service: "+e.message;
+  }
+}
+function acctUI(){
+  const on=!!FB.user;
+  $("acctForms").style.display=on?"none":"block";
+  $("acctSigned").style.display=on?"flex":"none";
+  if(on){$("acctWho").textContent=FB.user.email;
+    $("acctPill").textContent="signed in";$("acctPill").classList.add("ok");}
+  else{$("acctPill").classList.remove("ok");
+    if(FIREBASE_CONFIG)$("acctPill").textContent="ready";}
+  const w=$("acctWidget");
+  w.innerHTML=on
+    ? `<span class="who"><span class="dot"></span><b>${FB.user.email}</b></span><button class="mini" id="headerSignOut">Sign out</button>`
+    : `<button class="btn" id="headerAcctBtn">Sign in</button>`;
+  if(on) $("headerSignOut").onclick=()=>acctDo(async()=>{await FB.auth.signOut();$("acctStatus").textContent="Signed out. Progress keeps saving locally.";});
+  else $("headerAcctBtn").onclick=()=>{goTab("setup");document.getElementById("acctEmail").scrollIntoView({behavior:"smooth",block:"center"});document.getElementById("acctEmail").focus();};
+}
+async function acctDo(fn){
+  if(!FB.auth){$("acctStatus").textContent="Accounts aren't configured on this copy of the site yet — see the note below.";return;}
+  try{$("acctStatus").textContent="Working…";await fn();}
+  catch(e){$("acctStatus").textContent=(e&&e.message||"Error").replace("Firebase: ","");}
+}
+$("acctSignin").onclick=()=>acctDo(async()=>{
+  await FB.auth.signInWithEmailAndPassword($("acctEmail").value.trim(),$("acctPass").value);
+  $("acctPass").value="";$("acctStatus").textContent="";
+});
+$("acctSignup").onclick=()=>acctDo(async()=>{
+  await FB.auth.createUserWithEmailAndPassword($("acctEmail").value.trim(),$("acctPass").value);
+  $("acctPass").value="";$("acctStatus").textContent="Account created — you're signed in.";
+});
+$("acctSignout").onclick=()=>acctDo(async()=>{await FB.auth.signOut();$("acctStatus").textContent="Signed out. Progress keeps saving locally.";});
+$("acctSync").onclick=()=>acctDo(()=>pullSync());
+async function pushSync(){
+  if(!FB.user||!FB.db)return;
+  await FB.db.collection("cwtrainer").doc(FB.user.uid)
+    .set({kochLesson,charStats,updatedAt:localUpdated()||Date.now()});
+  $("acctStatus").textContent="Synced "+new Date().toLocaleTimeString();
+}
+async function pullSync(){
+  if(!FB.user||!FB.db)return;
+  const snap=await FB.db.collection("cwtrainer").doc(FB.user.uid).get();
+  if(snap.exists){
+    const r=snap.data();
+    if((r.updatedAt||0)>localUpdated()){
+      kochLesson=r.kochLesson||2; charStats=r.charStats||{};
+      try{ // raw writes so we don't re-stamp updatedAt
+        localStorage.setItem("cwt_kochLesson",JSON.stringify(kochLesson));
+        localStorage.setItem("cwt_charStats",JSON.stringify(charStats));
+        localStorage.setItem("cwt_updatedAt",JSON.stringify(r.updatedAt||Date.now()));
+      }catch(e){}
+      renderKoch(); setupStats(); refreshLibrary();
+      $("acctStatus").textContent="Loaded cloud progress from "+new Date(r.updatedAt||Date.now()).toLocaleString();
+      return;
+    }
+  }
+  await pushSync(); // local is newer (or first sync) — upload it
+}
+initFirebase();
+acctUI(); // wire up the header button immediately, even before/without Firebase
+
+/* ---------------- tabs ---------------- */
+function goTab(name){
+  document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("active",x.dataset.tab===name));
+  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+  $("tab-"+name).classList.add("active");
+  stopPlayback();
+  if(name==="setup")setupStats();
+  window.scrollTo({top:0});
+}
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>goTab(b.dataset.tab));
+document.querySelectorAll("[data-goto]").forEach(b=>b.onclick=()=>goTab(b.dataset.goto));
+</script>
+</body>
+</html>
