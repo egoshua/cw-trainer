@@ -33,12 +33,6 @@
   .lamp.on{background:var(--amber);box-shadow:0 0 10px var(--amber),0 0 22px var(--amber-glow)}
   .lampwrap{display:flex;flex-direction:column;align-items:center;gap:4px}
   .lampwrap span{font:10px var(--mono);color:var(--muted);letter-spacing:.14em}
-  .acctWidget{display:flex;align-items:center;gap:8px;margin-left:6px}
-  .acctWidget .who{display:flex;align-items:center;gap:8px;font:12px var(--mono);color:var(--muted)}
-  .acctWidget .who b{color:var(--amber);font-weight:600}
-  .acctWidget .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 6px var(--ok)}
-  .acctWidget .mini{font:12px var(--sans);color:var(--muted);text-decoration:underline;background:none;border:none;padding:0}
-  .acctWidget .mini:hover{color:var(--ink)}
 
   nav{display:flex;gap:2px;padding:0 12px;background:var(--panel);border-bottom:1px solid var(--line);
     overflow-x:auto;scrollbar-width:none}
@@ -183,9 +177,6 @@
     <span class="val" id="volV">60%</span></div>
   </div>
   <div class="lampwrap"><div class="lamp" id="lamp"></div><span>KEY</span></div>
-  <div class="acctWidget" id="acctWidget">
-    <button class="btn" id="headerAcctBtn">Sign in</button>
-  </div>
 </header>
 
 <nav>
@@ -543,14 +534,7 @@ function randCall(){
 /* To enable accounts & cloud sync, paste your Firebase web-app config object here.
    See the Account card in Setup for the 3-minute walkthrough. Example shape:
    const FIREBASE_CONFIG = { apiKey:"...", authDomain:"...", projectId:"...", appId:"..." };  */
-const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyCZ3EFVXsZsM9L4vYVy-ApMgaNSg2qtTj0",
-  authDomain: "cw-trainer-3f85d.firebaseapp.com",
-  projectId: "cw-trainer-3f85d",
-  storageBucket: "cw-trainer-3f85d.firebasestorage.app",
-  messagingSenderId: "472743351264",
-  appId: "1:472743351264:web:c997c24d995cca297d9185"
-};
+const FIREBASE_CONFIG = null;
 
 const store={
   get(k,d){try{const v=localStorage.getItem("cwt_"+k);return v==null?d:JSON.parse(v)}catch(e){return d}},
@@ -1170,12 +1154,6 @@ function acctUI(){
     $("acctPill").textContent="signed in";$("acctPill").classList.add("ok");}
   else{$("acctPill").classList.remove("ok");
     if(FIREBASE_CONFIG)$("acctPill").textContent="ready";}
-  const w=$("acctWidget");
-  w.innerHTML=on
-    ? `<span class="who"><span class="dot"></span><b>${FB.user.email}</b></span><button class="mini" id="headerSignOut">Sign out</button>`
-    : `<button class="btn" id="headerAcctBtn">Sign in</button>`;
-  if(on) $("headerSignOut").onclick=()=>acctDo(async()=>{await FB.auth.signOut();$("acctStatus").textContent="Signed out. Progress keeps saving locally.";});
-  else $("headerAcctBtn").onclick=()=>{goTab("setup");document.getElementById("acctEmail").scrollIntoView({behavior:"smooth",block:"center"});document.getElementById("acctEmail").focus();};
 }
 async function acctDo(fn){
   if(!FB.auth){$("acctStatus").textContent="Accounts aren't configured on this copy of the site yet — see the note below.";return;}
@@ -1218,7 +1196,6 @@ async function pullSync(){
   await pushSync(); // local is newer (or first sync) — upload it
 }
 initFirebase();
-acctUI(); // wire up the header button immediately, even before/without Firebase
 
 /* ---------------- tabs ---------------- */
 function goTab(name){
